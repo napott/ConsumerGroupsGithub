@@ -35,7 +35,7 @@ module.exports = app => {
   });
 
   server.get('/events', (req, res) => {
-    const groupAddress = req.body.groupAddress;
+    const groupAddress = req.query.groupAddress;
     Group.findOne({address: groupAddress}, function(err, group) {
       if (err) {
         res.status(500).json({'message': 'Error finding group'});
@@ -152,7 +152,6 @@ module.exports = app => {
       }
     })
   });
-
   app.on('push', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
@@ -163,4 +162,15 @@ module.exports = app => {
     githubEvent.save();
     app.log("Added push event");
   });
+
+  // Create test end point for consumer groups apis
+  const consumerGroupsRouter = app.route('/cg')
+  consumerGroupsRouter.use(require('express').static('public'))
+  consumerGroupsRouter.get('/hello-world', (req, res) => {
+
+    var cg = require('./consumerGroup')
+    
+    cg.writeSimpleEmail("juancamiloochoa@gmail.com", "<h1>hola</h1>");
+    res.send('Hello World');
+  })
 }
