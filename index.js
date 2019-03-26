@@ -107,7 +107,7 @@ module.exports = app => {
   app.on('push', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
-      status: 'closed',
+      state: 'closed',
       url: context.payload.compare,
     });
 
