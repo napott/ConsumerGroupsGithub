@@ -35,7 +35,7 @@ module.exports = app => {
   });
 
   server.get('/events', (req, res) => {
-    const groupAddress = req.body.groupAddress;
+    const groupAddress = req.query.groupAddress;
     Group.findOne({address: groupAddress}, function(err, group) {
       if (err) {
         res.status(500).json({'message': 'Error finding group'});
