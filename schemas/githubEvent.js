@@ -4,7 +4,13 @@ const Schema = mongoose.Schema;
 
 const githubEventSchema = new Schema({
   eventType: {type: String, required: true},
-  url: {type: String},
+  state: {type: String, required: true},
+  url: {type: String, required: true},
+  title: {type: String},
+  body: {type: String},
+  githubId: {type: String},
+}, {
+  timestamps: true,
 });
 
 module.exports = mongoose.model('GithubEvent', githubEventSchema);
