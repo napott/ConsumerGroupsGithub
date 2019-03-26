@@ -112,6 +112,6 @@ module.exports = app => {
     });
 
     githubEvent.save();
-    app.log("Added push " + githubEvent.githubId);
+    app.log("Added push event");
   });
 }
