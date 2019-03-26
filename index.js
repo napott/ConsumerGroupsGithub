@@ -3,8 +3,11 @@
  * @param {import('probot').Application} app
  */
 module.exports = app => {
-  const mongoose = require('mongoose');
   require('dotenv').config();
+
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const mongoose = require('mongoose');
 
   const GithubEvent = require('./schemas/githubEvent');
 
@@ -18,6 +21,26 @@ module.exports = app => {
   })
   .then(() => console.log('Connection to CosmosDB successful'))
   .catch((err) => console.error(err));
+
+  const server = express();
+
+  server.get('/events', (req, res) => {
+    GithubEvent.find({}, function(err, events) {
+      if (err) {
+        res.status(500).json({'message': 'There was an error retrieving the events'});
+      } else {
+        res.status(200).json({events: events});
+      }
+    })
+  });
+
+  let port = 8000;
+  // Exposed express API
+  server.listen(port, () => {
+    app.log('API server listening on port ' + port);
+  })
+
+  // Github probot app
 
   app.on('issues.opened', async context => {
     let githubEvent = new GithubEvent({
