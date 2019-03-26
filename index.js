@@ -35,19 +35,34 @@ module.exports = app => {
   });
 
   server.get('/events', (req, res) => {
-    GithubEvent.find({}, function(err, events) {
+    const groupAddress = req.body.groupAddress;
+    Group.findOne({address: groupAddress}, function(err, group) {
       if (err) {
-        res.status(500).json({'message': 'There was an error retrieving the events'});
+        res.status(500).json({'message': 'Error finding group'});
+        return;
+      } else if (group == null) {
+        res.status(404).json({'message': 'Group to gather events for not found'});
+        return;
       } else {
-        res.status(200).json({events: events});
+        GithubEvent.find({repo: {$in: group.repos}}, function(err, events) {
+          if (err) {
+            res.status(500).json({'message': 'There was an error retrieving the events'});
+          } else {
+            res.status(200).json({events: events});
+          }
+        })
       }
     })
   });
 
   server.post('/groupRepos', (req, res) => {
-    const groupAddress = req.body.group;
+    const groupAddress = req.body.groupAddress;
     const repo = req.body.repo;
-    app.log(groupAddress, repo);
+
+    if (groupAddress == null || repo == null) {
+      res.status(400).json({'message': 'Must include group address and repo'});
+      return;
+    }
     
     let conditions = {
       address: groupAddress,
