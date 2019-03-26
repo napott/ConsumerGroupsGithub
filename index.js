@@ -10,6 +10,7 @@ module.exports = app => {
   const mongoose = require('mongoose');
 
   const GithubEvent = require('./schemas/githubEvent');
+  const Group = require('./schemas/groupSchema');
 
   // Connect to the Mongo database using credentials
   // in your environment variables
@@ -24,6 +25,12 @@ module.exports = app => {
 
   const server = express();
 
+  server.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
+
   server.get('/events', (req, res) => {
     GithubEvent.find({}, function(err, events) {
       if (err) {
@@ -32,6 +39,27 @@ module.exports = app => {
         res.status(200).json({events: events});
       }
     })
+  });
+
+  server.post('/groups/:address/repos', (req, res) => {
+    const groupAddress = req.params.address;
+    const repo = req.repo;
+    
+    let conditions = {
+      address: groupAddress,
+    };
+
+    let update = {
+      $addToSet: { repos: repo },
+    };
+
+    Group.findOneAndUpdate(conditions, update, {upsert: true}, function(err, group) {
+      if (err) {
+        res.status(500).json({'message': 'There was an error saving the group repos'});
+      } else {
+        res.status(200).json({group: group});
+      }
+    });
   });
 
   let port = 8000;
@@ -47,6 +75,7 @@ module.exports = app => {
       eventType: 'issue',
       state: context.payload.issue.state,
       url: context.payload.issue.url,
+      repo: context.payload.repository.id,
       title: context.payload.issue.title,
       body: context.payload.issue.body,
       githubId: context.payload.issue.id,
@@ -78,6 +107,7 @@ module.exports = app => {
       eventType: 'pull_request',
       state: context.payload.pull_request.state,
       url: context.payload.pull_request.url,
+      repo: context.payload.repository.id,
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
       githubId: context.payload.pull_request.id,
@@ -108,6 +138,7 @@ module.exports = app => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
       state: 'closed',
+      repo: context.payload.repository.id,
       url: context.payload.compare,
     });
 
