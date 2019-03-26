@@ -25,6 +25,9 @@ module.exports = app => {
 
   const server = express();
 
+  server.use(bodyParser.urlencoded({extended: false}));
+  server.use(bodyParser.json());
+
   server.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -41,9 +44,10 @@ module.exports = app => {
     })
   });
 
-  server.post('/groups/:address/repos', (req, res) => {
-    const groupAddress = req.params.address;
-    const repo = req.repo;
+  server.post('/groupRepos', (req, res) => {
+    const groupAddress = req.body.group;
+    const repo = req.body.repo;
+    app.log(groupAddress, repo);
     
     let conditions = {
       address: groupAddress,
@@ -57,7 +61,7 @@ module.exports = app => {
       if (err) {
         res.status(500).json({'message': 'There was an error saving the group repos'});
       } else {
-        res.status(200).json({group: group});
+        res.status(200).json({'message': 'Group repo added'});
       }
     });
   });
