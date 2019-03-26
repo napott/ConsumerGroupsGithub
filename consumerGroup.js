@@ -3,7 +3,7 @@ const querystring = require('querystring')
 
 module.exports = {
 
-    writeSimpleEmail : function (recipientSmtpAddress, bodyInHtml)
+    writeSimpleEmail : function (recipientSmtpAddress, subject, bodyInHtml)
     {
         var accessToken = getAccessToken(function(accessToken)
         {
@@ -18,7 +18,7 @@ module.exports = {
             {
                 "Message" :
                 {
-                    "Subject" : "theSubject",
+                    "Subject" : subject,
                     "Body": {
                         "ContentType" : "HTML",
                         "Content" : bodyInHtml
@@ -46,18 +46,50 @@ module.exports = {
                     console.log(result);
                 });
         });
+    },
+
+    addMemberToConsumerGroup : function (groupSmtpAdddress, userSmtpAddress)
+    {
+        var accessToken = getAccessToken(function(accessToken)
+        {
+            var url = `https://outlook.office365.com/api/beta/Groups('${groupSmtpAdddress}')/AddMembers`;
+            var headers =
+            {
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json',
+                'prefer': 'exchange.behavior="GroupMembers"'
+            }; 
+            
+            var body = 
+            {
+                "Members" : [ userSmtpAddress ]
+            };
+
+            jsonBody = JSON.stringify(body);
+
+            issue_request(
+                "POST",
+                url,
+                headers,
+                jsonBody,
+                function (result)
+                {
+                    console.log(result);
+                });
+        });        
     }
+
 }
 
 function getAccessToken (callback)
 {
     var url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-    var refresh_token = 'MCU7gxwEkkBPQA55DCaAXYpE9fUMTiabDW9PHR6I5yUDqvh1UCa1iMhby1x3*L8jeJaBmQ9yKDP2dM!Qnd*m3kJu*WLQcHAqaYh8WiBWE7jwELEV7zsXf!rMvpFPcBk50*bDvmRwkedxFUQ0bA9rOWeTFkRTjUcvgrULzMVdQX*58DqeRZB9S2WBevOnUoyetr!aTHyGlDxBZUy0NmakA3MZ3Vc*NLiuHaskclLXzXjoDyJOHo*OUIZK1MiQGsTAwlpoEQERmcc8uJiPXfEaM!BP378F2VJxDZ3cfuiwoWJWu0O!a*BCVOR1Fa3qtQTXj1kYcz*4J2kbJGo*RxEzBTjeS8ewq6SG8BqTPURKxMoBkXbWmKn01FEcqQzb1p8pX9ynpalcVXAJ1P9OG9z!sRFwPwWHfTGca6LXMO0qcIjZ693bdTSd70I3Ya7SOTwDr4vhBOFhN0TAm5ov0dmOSLQ0$';
+    var refresh_token = 'MCeYaosjp2woZegPHS2MgcwfNQqAv!XJ86F2Vkg26DWk6!aa7xnp3PjInKL!H9es8RMJfHl735088vh5kThtIY0Yjh7y4BVFr!EOrbwA7xzfMmqHjG28hcxrppp2tksdiwZf8508ipEqLM7SgRwq8*uzFwfxWH6RGighgaN7rdaibebH51OtQIMg9rLeqMLshn2gK0iadCAzXETQH1p**U3UQxXUdx105UnhSRHn*r1HtNLlS8JFUUDyWfhPgtuaj*LQge71YkUxy011qA0pKGK5bK0n5W6u1TvnWU5FRbrjpyZwmRtp8qfyLnOyUNNdRH!e37biicsTmaslICJ6p3wl4DBPrFJr8FJUA3n2egxMnn1YFPHUDdHe0Og1cKJGWKcJJDIxLKQsGuQTLGlSU7M!cO11mNsgxebPxwMfcsJnu1bNDKrC1ORyQCiXvAaOeK*tmheM0RSVW8P*uKYsn*jy!Eb51!bnwKIuHQDKl3tSF';
 
     var form = {
-        client_id: '4ac73e6e-dd1f-445f-94f8-20c27bec7b56',
-        client_secret: 'nARVVT96)~pvlfrnHJ895[*',
-        scope: 'https://outlook.office.com/mail.send https://outlook.office.com/mail.read',
+        client_id: '561d3096-12ee-4ee6-b2fe-1fc37af25dd3',
+        client_secret: 'uqbjZDAY041]@{rncLBS85(',
+        scope: 'https://outlook.office.com/mail.send https://outlook.office.com/mail.read https://outlook.office.com/group.readwrite.all',
         refresh_token: refresh_token,
         grant_type: 'refresh_token',
         redirect_uri: 'https://localhost'

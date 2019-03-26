@@ -171,7 +171,16 @@ module.exports = app => {
 
     var cg = require('./consumerGroup')
     
-    cg.writeSimpleEmail("juancamiloochoa@gmail.com", "<h1>hola</h1>");
+    //cg.writeSimpleEmail(
+    //  "juancamiloochoa@gmail.com",
+    //  "The subject",
+    //  "<h1>hola</h1>");
+    
+    cg.addMemberToConsumerGroup(
+      "fhlgroup1@groups.outlook.com",
+      "ntpttr@outlook.com"
+    );
+
     res.send('Hello World');
   })
 }
