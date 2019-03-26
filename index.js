@@ -105,11 +105,10 @@ module.exports = app => {
   });
 
   app.on('push', async context => {
-    app.log(context);
     let githubEvent = new GithubEvent({
       eventType: 'push',
       status: 'closed',
-      url: context.payload.push.compare,
+      url: context.payload.compare,
     });
 
     githubEvent.save();
