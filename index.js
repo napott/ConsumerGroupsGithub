@@ -3,27 +3,46 @@
  * @param {import('probot').Application} app
  */
 module.exports = app => {
-  // Your code here
-  app.log('Yay, the app was loaded!')
+  const mongoose = require('mongoose');
+  require('dotenv').config();
+
+  const GithubEvent = require('./schemas/githubEvent');
+
+  // Connect to the Mongo database using credentials
+  // in your environment variables
+  mongoose.connect(process.env.COSMOSDB_CONNSTR+"?ssl=true&replicaSet=globaldb", {
+    auth: {
+      user: process.env.COSMODDB_USER,
+      password: process.env.COSMOSDB_PASSWORD
+    }
+  })
+  .then(() => console.log('Connection to CosmosDB successful'))
+  .catch((err) => console.error(err));
 
   app.on('issues.opened', async context => {
-    app.log(context);
-    // const issueComment = context.issue({ body: 'Thanks for opening this issue!' })
-    // return context.github.issues.createComment(issueComment)
+    let githubEvent = new GithubEvent({
+      eventType: 'issue',
+      url: context.payload.issue.url,
+    });
+
+    githubEvent.save();
   });
 
   app.on('pull_request.opened', async context => {
-    app.log(context);
+    let githubEvent = new GithubEvent({
+      eventType: 'pull_request',
+      url: context.payload.issue.url,
+    });
+
+    githubEvent.save();
   });
 
   app.on('push', async context => {
-    app.log(context);
+    let githubEvent = new GithubEvent({
+      eventType: 'push',
+      url: context.payload.issue.compare,
+    });
+
+    githubEvent.save();
   });
-
-
-  // For more information on building apps:
-  // https://probot.github.io/docs/
-
-  // To get your app running against GitHub, see:
-  // https://probot.github.io/docs/development/
 }
