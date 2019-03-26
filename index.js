@@ -108,7 +108,7 @@ module.exports = app => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
       status: 'closed',
-      url: context.payload.issue.compare,
+      url: context.payload.push.compare,
     });
 
     githubEvent.save();
