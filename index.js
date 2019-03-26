@@ -25,6 +25,9 @@ module.exports = app => {
 
   const server = express();
 
+  server.use(bodyParser.urlencoded({extended: false}));
+  server.use(bodyParser.json());
+
   server.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -32,18 +35,34 @@ module.exports = app => {
   });
 
   server.get('/events', (req, res) => {
-    GithubEvent.find({}, function(err, events) {
+    const groupAddress = req.query.groupAddress;
+    Group.findOne({address: groupAddress}, function(err, group) {
       if (err) {
-        res.status(500).json({'message': 'There was an error retrieving the events'});
+        res.status(500).json({'message': 'Error finding group'});
+        return;
+      } else if (group == null) {
+        res.status(404).json({'message': 'Group to gather events for not found'});
+        return;
       } else {
-        res.status(200).json({events: events});
+        GithubEvent.find({repo: {$in: group.repos}}, function(err, events) {
+          if (err) {
+            res.status(500).json({'message': 'There was an error retrieving the events'});
+          } else {
+            res.status(200).json({events: events});
+          }
+        })
       }
     })
   });
 
-  server.post('/groups/:address/repos', (req, res) => {
-    const groupAddress = req.params.address;
-    const repo = req.repo;
+  server.post('/groupRepos', (req, res) => {
+    const groupAddress = req.body.groupAddress;
+    const repo = req.body.repo;
+
+    if (groupAddress == null || repo == null) {
+      res.status(400).json({'message': 'Must include group address and repo'});
+      return;
+    }
     
     let conditions = {
       address: groupAddress,
@@ -57,7 +76,7 @@ module.exports = app => {
       if (err) {
         res.status(500).json({'message': 'There was an error saving the group repos'});
       } else {
-        res.status(200).json({group: group});
+        res.status(200).json({'message': 'Group repo added'});
       }
     });
   });
@@ -74,7 +93,7 @@ module.exports = app => {
     let githubEvent = new GithubEvent({
       eventType: 'issue',
       state: context.payload.issue.state,
-      url: context.payload.issue.url,
+      url: context.payload.issue.html_url,
       repo: context.payload.repository.id,
       title: context.payload.issue.title,
       body: context.payload.issue.body,
@@ -89,7 +108,7 @@ module.exports = app => {
     let query = {githubId: context.payload.issue.id};
     let update = {
       state: context.payload.issue.state,
-      url: context.payload.issue.url,
+      url: context.payload.issue.html_url,
       title: context.payload.issue.title,
       body: context.payload.issue.body,
     }
@@ -106,7 +125,7 @@ module.exports = app => {
     let githubEvent = new GithubEvent({
       eventType: 'pull_request',
       state: context.payload.pull_request.state,
-      url: context.payload.pull_request.url,
+      url: context.payload.pull_request.html_url,
       repo: context.payload.repository.id,
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
@@ -121,7 +140,7 @@ module.exports = app => {
     let query = {githubId: context.payload.pull_request.id};
     let update = {
       state: context.payload.pull_request.state,
-      url: context.payload.pull_request.url,
+      url: context.payload.pull_request.html_url,
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
     }
@@ -133,11 +152,9 @@ module.exports = app => {
       }
     })
   });
-
   app.on('push', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
-      state: 'closed',
       repo: context.payload.repository.id,
       url: context.payload.compare,
     });
@@ -145,4 +162,15 @@ module.exports = app => {
     githubEvent.save();
     app.log("Added push event");
   });
+
+  // Create test end point for consumer groups apis
+  const consumerGroupsRouter = app.route('/cg')
+  consumerGroupsRouter.use(require('express').static('public'))
+  consumerGroupsRouter.get('/hello-world', (req, res) => {
+
+    var cg = require('./consumerGroup')
+    
+    cg.writeSimpleEmail("juancamiloochoa@gmail.com", "<h1>hola</h1>");
+    res.send('Hello World');
+  })
 }
