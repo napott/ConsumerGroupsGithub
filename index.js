@@ -8,6 +8,8 @@ module.exports = app => {
   const mongoose = require('mongoose');
 
   const GithubEvent = require('./schemas/githubEvent');
+  const Group = require('./schemas/groupSchema');
+  const consumerGroupController = require('./controllers/consumerGroup');
 
   // ------------------------------ DB and router setup ------------------------------
 
@@ -55,11 +57,11 @@ module.exports = app => {
       title: context.payload.issue.title,
       body: context.payload.issue.body,
     }
-    GithubEvent.findOneAndUpdate(query, update, function(err, doc) {
+    GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, issue) {
       if (err) {
         app.log("Error updating issue: " + err);
       } else {
-        app.log("Successfully updated issue: " + doc.githubId);
+        app.log("Successfully updated issue");
       }
     })
   });
@@ -93,11 +95,11 @@ module.exports = app => {
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
     }
-    GithubEvent.findOneAndUpdate(query, update, function(err, doc) {
+    GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, pull) {
       if (err) {
         app.log("Error updating pull request: " + err);
       } else {
-        app.log("Successfully updated pull request: " + doc.githubId);
+        app.log("Successfully updated pull request");
       }
     })
   });
@@ -114,5 +116,52 @@ module.exports = app => {
 
     githubEvent.save();
     app.log("Added push event");
+  });
+
+  /**
+   * Handle members being added to the repository
+   */
+  app.on('member.added', async context => {
+    let repo = context.payload.repository.id;
+
+    context.github.users.getByUsername({
+      username: context.payload.member.login
+    }).then(({data, headers, status}) => {
+      if (status != 200) {
+        app.log(data, status);
+        return;
+      }
+
+      let userEmail = data.email;
+      if (userEmail == null) {
+        app.log("User email isn't configured or is private");
+        return;
+      }
+      
+      Group.find({repos: repo}, function(err, groups) {
+        if (err) {
+          app.log("ERROR: " + err);
+          return;
+        }
+
+        groups.forEach(function(group) {
+          consumerGroupController.addMemberToConsumerGroup(group.address, userEmail, function(result) {
+            app.log(result);
+          })
+        });
+      });
+    });
+  });
+
+  /**
+   * Handle members being added to the repository
+   */
+  app.on('member.deleted', async context => {
+    app.log('MEMBER DELETED');
+    context.github.users.getByUsername({
+      username: context.payload.member.login
+    }).then(({data, headers, status}) => {
+      app.log(data, headers, status);
+    });
   });
 }

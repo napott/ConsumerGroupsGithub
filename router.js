@@ -1,8 +1,7 @@
 const bodyParser = require('body-parser');
 
-const Group = require('./schemas/groupSchema');
-const GithubEvent = require('./schemas/githubEvent');
-const consumerGroup = require('./consumerGroup')
+const consumerGroupController = require('./controllers/consumerGroup')
+const databaseController = require('./controllers/database');
 
 module.exports = app => {
     // ------------------------------ Router Setup ------------------------------
@@ -20,13 +19,12 @@ module.exports = app => {
 
     // ------------------------------ App API routes ------------------------------
 
+    /**
+     * List all groups
+     */
     router.get('/', (req, res) => {
-      Group.find({}, function(err, groups) {
-        if (err) {
-            res.status(500).json({'message': err});
-        } else {
-            res.status(200).json({'groups': groups});
-        }
+      databaseController.getGroups(function(status, body) {
+          res.status(status).json(body);
       });
     });
 
@@ -35,22 +33,8 @@ module.exports = app => {
      */
     router.get('/events', (req, res) => {
         const groupAddress = req.query.groupAddress;
-        Group.findOne({address: groupAddress}, function(err, group) {
-            if (err) {
-                res.status(500).json({'message': 'Error finding group'});
-                return;
-            } else if (group == null) {
-                res.status(404).json({'message': 'Group to gather events for not found'});
-                return;
-            } else {
-                GithubEvent.find({repo: {$in: group.repos}}, function(err, events) {
-                    if (err) {
-                        res.status(500).json({'message': 'There was an error retrieving the events'});
-                    } else {
-                        res.status(200).json({events: events});
-                    }
-                });
-            }
+        databaseController.getEventsForGroup(groupAddress, function(status, body) {
+          res.status(status).json(body);
         });
     });
 
@@ -61,25 +45,8 @@ module.exports = app => {
         const groupAddress = req.body.groupAddress;
         const repos = req.body.repos;
 
-        if (groupAddress == null || repos == null) {
-            res.status(400).json({'message': 'Must include group address and repos'});
-            return;
-        }
-        
-        let conditions = {
-            address: groupAddress,
-        };
-
-        let update = {
-            $addToSet: { repos: repos },
-        };
-
-        Group.findOneAndUpdate(conditions, update, {upsert: true}, function(err, group) {
-            if (err) {
-                res.status(500).json({'message': 'There was an error saving the group repos'});
-            } else {
-                res.status(200).json({'message': 'Group repositories added'});
-            }
+        databaseController.addReposToGroup(groupAddress, repos, function(status, body) {
+          res.status(status).json(body);
         });
     });
 
@@ -90,25 +57,8 @@ module.exports = app => {
         const groupAddress = req.body.groupAddress;
         const repos = req.body.repos;
 
-        if (groupAddress == null || repos == null) {
-            res.status(400).json({'message': 'Must include group address and repos'});
-            return;
-        }
-        
-        let conditions = {
-            address: groupAddress,
-        };
-
-        let update = {
-            $pullAll: { repos: repos },
-        };
-
-        Group.findOneAndUpdate(conditions, update, function(err, group) {
-            if (err) {
-                res.status(500).json({'message': err});
-            } else {
-                res.status(200).json({'message': 'Group repositories removed'});
-            }
+        databaseController.deleteReposFromGroup(groupAddress, repos, function(status, body) {
+          res.status(status).json(body);
         });
     });
 
@@ -120,7 +70,7 @@ module.exports = app => {
         const subject = req.body.subject;
         const emailBody = req.body.emailBody;
 
-        consumerGroup.writeSimpleEmail(groupAddress, subject, emailBody, function(result) {
+        consumerGroupController.writeSimpleEmail(groupAddress, subject, emailBody, function(result) {
             res.status(200).json({'result': result});
         });
     });
@@ -132,7 +82,7 @@ module.exports = app => {
         const groupAddress = req.body.groupAddress;
         const userAddress = req.body.userAddress;
 
-        consumerGroup.addMemberToConsumerGroup(groupAddress, userAddress, function(result) {
+        consumerGroupController.addMemberToConsumerGroup(groupAddress, userAddress, function(result) {
             res.status(200).json({'result': result});
         });
     });
