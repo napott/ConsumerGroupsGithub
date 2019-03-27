@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const groupSchema = new Schema({
-  address: {type: String, unique: true},
+  address: {type: String, unique: true, required: true},
   repos: [{type: String}],
 });
 

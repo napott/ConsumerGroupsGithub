@@ -8,6 +8,8 @@ module.exports = app => {
   const mongoose = require('mongoose');
 
   const GithubEvent = require('./schemas/githubEvent');
+  const Group = require('./schemas/groupSchema');
+  const consumerGroupController = require('./controllers/consumerGroup');
 
   // ------------------------------ DB and router setup ------------------------------
 
@@ -120,7 +122,46 @@ module.exports = app => {
    * Handle members being added to the repository
    */
   app.on('member.added', async context => {
-    app.log('MEMBERSHIP ADDED');
-    app.log(context.github.users.getByUsername(context.payload.member.login));
+    let repo = context.payload.repository.id;
+
+    context.github.users.getByUsername({
+      username: context.payload.member.login
+    }).then(({data, headers, status}) => {
+      if (status != 200) {
+        app.log(data, status);
+        return;
+      }
+
+      let userEmail = data.email;
+      if (userEmail == null) {
+        app.log("User email isn't configured or is private");
+        return;
+      }
+      
+      Group.find({repos: repo}, function(err, groups) {
+        if (err) {
+          app.log("ERROR: " + err);
+          return;
+        }
+
+        groups.forEach(function(group) {
+          consumerGroupController.addMemberToConsumerGroup(group.address, userEmail, function(result) {
+            app.log(result);
+          })
+        });
+      });
+    });
+  });
+
+  /**
+   * Handle members being added to the repository
+   */
+  app.on('member.deleted', async context => {
+    app.log('MEMBER DELETED');
+    context.github.users.getByUsername({
+      username: context.payload.member.login
+    }).then(({data, headers, status}) => {
+      app.log(data, headers, status);
+    });
   });
 }
