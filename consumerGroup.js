@@ -3,7 +3,7 @@ const querystring = require('querystring')
 
 module.exports = {
 
-    writeSimpleEmail : function (recipientSmtpAddress, subject, bodyInHtml)
+    writeSimpleEmail : function (recipientSmtpAddress, subject, bodyInHtml, callback)
     {
         var accessToken = getAccessToken(function(accessToken)
         {
@@ -43,12 +43,12 @@ module.exports = {
                 jsonBody,
                 function (result)
                 {
-                    console.log(result);
+                    callback(result);
                 });
         });
     },
 
-    addMemberToConsumerGroup : function (groupSmtpAdddress, userSmtpAddress)
+    addMemberToConsumerGroup : function (groupSmtpAdddress, userSmtpAddress, callback)
     {
         var accessToken = getAccessToken(function(accessToken)
         {
@@ -74,7 +74,7 @@ module.exports = {
                 jsonBody,
                 function (result)
                 {
-                    console.log(result);
+                    callback(result);
                 });
         });        
     }

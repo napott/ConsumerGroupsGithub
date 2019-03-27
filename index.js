@@ -11,6 +11,9 @@ module.exports = app => {
 
   const GithubEvent = require('./schemas/githubEvent');
   const Group = require('./schemas/groupSchema');
+  const consumerGroup = require('./consumerGroup')
+
+  // ------------------------------ DB and router setup ------------------------------
 
   // Connect to the Mongo database using credentials
   // in your environment variables
@@ -23,18 +26,25 @@ module.exports = app => {
   .then(() => console.log('Connection to CosmosDB successful'))
   .catch((err) => console.error(err));
 
-  const server = express();
+  // Create test end point for consumer groups apis
+  const router = app.route('/groups');
+  router.use(require('express').static('public'));
 
-  server.use(bodyParser.urlencoded({extended: false}));
-  server.use(bodyParser.json());
+  router.use(bodyParser.urlencoded({extended: false}));
+  router.use(bodyParser.json());
 
-  server.use(function(req, res, next) {
+  router.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   });
 
-  server.get('/events', (req, res) => {
+  // ------------------------------ App API routes ------------------------------
+
+  /**
+   * Get the repo events for a given group
+   */
+  router.get('/events', (req, res) => {
     const groupAddress = req.query.groupAddress;
     Group.findOne({address: groupAddress}, function(err, group) {
       if (err) {
@@ -55,7 +65,10 @@ module.exports = app => {
     })
   });
 
-  server.post('/groupRepos', (req, res) => {
+  /**
+   * Add a repo to a group's list of connected repos
+   */
+  router.post('/repos', (req, res) => {
     const groupAddress = req.body.groupAddress;
     const repo = req.body.repo;
 
@@ -81,14 +94,36 @@ module.exports = app => {
     });
   });
 
-  let port = 8000;
-  // Exposed express API
-  server.listen(port, () => {
-    app.log('API server listening on port ' + port);
-  })
+  /**
+   * Send an email to a group
+   */
+  router.post('/email', (req, res) => {
+    const groupAddress = req.body.groupAddress;
+    const subject = req.body.subject;
+    const emailBody = req.body.emailBody;
 
-  // Github probot app
+    consumerGroup.writeSimpleEmail(groupAddress, subject, emailBody, function(result) {
+      res.status(200).json({'result': result});
+    });
+  });
 
+  /**
+   * Add a member to a consumer group
+   */
+  router.post('/members', (req, res) => {
+    const groupAddress = req.body.groupAddress;
+    const userAddress = req.body.userAddress;
+
+    consumerGroup.addMemberToConsumerGroup(groupAddress, userAddress, function(result) {
+      res.status(200).json({'result': result});
+    })
+  });
+
+  // ------------------------------ Github event handlers ------------------------------
+
+  /**
+   * Handle newly opened issues
+   */
   app.on('issues.opened', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'issue',
@@ -104,6 +139,9 @@ module.exports = app => {
     app.log("Added issue " + githubEvent.githubId);
   });
 
+  /**
+   * Handle updating issues
+   */
   app.on(['issues.closed', 'issues.reopened', 'issues.edited'], async context => {
     let query = {githubId: context.payload.issue.id};
     let update = {
@@ -121,6 +159,9 @@ module.exports = app => {
     })
   });
 
+  /**
+   * Handle newly opened pull requests
+   */
   app.on('pull_request.opened', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'pull_request',
@@ -136,6 +177,9 @@ module.exports = app => {
     app.log("Added pull request " + githubEvent.githubId);
   });
 
+  /**
+   * Handle updating pull requests
+   */
   app.on(['pull_request.closed', 'pull_request.reopened', 'pull_request.edited'], async context => {
     let query = {githubId: context.payload.pull_request.id};
     let update = {
@@ -152,6 +196,10 @@ module.exports = app => {
       }
     })
   });
+
+  /**
+   * Handle new push events
+   */
   app.on('push', async context => {
     let githubEvent = new GithubEvent({
       eventType: 'push',
@@ -162,24 +210,4 @@ module.exports = app => {
     githubEvent.save();
     app.log("Added push event");
   });
-
-  // Create test end point for consumer groups apis
-  const consumerGroupsRouter = app.route('/cg')
-  consumerGroupsRouter.use(require('express').static('public'))
-  consumerGroupsRouter.get('/hello-world', (req, res) => {
-
-    var cg = require('./consumerGroup')
-    
-    //cg.writeSimpleEmail(
-    //  "juancamiloochoa@gmail.com",
-    //  "The subject",
-    //  "<h1>hola</h1>");
-    
-    cg.addMemberToConsumerGroup(
-      "fhlgroup1@groups.outlook.com",
-      "ntpttr@outlook.com"
-    );
-
-    res.send('Hello World');
-  })
 }
