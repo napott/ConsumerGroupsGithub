@@ -55,11 +55,11 @@ module.exports = app => {
       title: context.payload.issue.title,
       body: context.payload.issue.body,
     }
-    GithubEvent.findOneAndUpdate(query, update, function(err, doc) {
+    GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, issue) {
       if (err) {
         app.log("Error updating issue: " + err);
       } else {
-        app.log("Successfully updated issue: " + doc.githubId);
+        app.log("Successfully updated issue");
       }
     })
   });
@@ -93,11 +93,11 @@ module.exports = app => {
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
     }
-    GithubEvent.findOneAndUpdate(query, update, function(err, doc) {
+    GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, pull) {
       if (err) {
         app.log("Error updating pull request: " + err);
       } else {
-        app.log("Successfully updated pull request: " + doc.githubId);
+        app.log("Successfully updated pull request");
       }
     })
   });
@@ -114,5 +114,13 @@ module.exports = app => {
 
     githubEvent.save();
     app.log("Added push event");
+  });
+
+  /**
+   * Handle members being added to the repository
+   */
+  app.on('member.added', async context => {
+    app.log('MEMBERSHIP ADDED');
+    app.log(context.github.users.getByUsername(context.payload.member.login));
   });
 }
