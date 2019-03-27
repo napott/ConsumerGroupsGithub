@@ -84,11 +84,11 @@ module.exports = {
 function getAccessToken (callback)
 {
     var url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
-    var refresh_token = 'MCeYaosjp2woZegPHS2MgcwfNQqAv!XJ86F2Vkg26DWk6!aa7xnp3PjInKL!H9es8RMJfHl735088vh5kThtIY0Yjh7y4BVFr!EOrbwA7xzfMmqHjG28hcxrppp2tksdiwZf8508ipEqLM7SgRwq8*uzFwfxWH6RGighgaN7rdaibebH51OtQIMg9rLeqMLshn2gK0iadCAzXETQH1p**U3UQxXUdx105UnhSRHn*r1HtNLlS8JFUUDyWfhPgtuaj*LQge71YkUxy011qA0pKGK5bK0n5W6u1TvnWU5FRbrjpyZwmRtp8qfyLnOyUNNdRH!e37biicsTmaslICJ6p3wl4DBPrFJr8FJUA3n2egxMnn1YFPHUDdHe0Og1cKJGWKcJJDIxLKQsGuQTLGlSU7M!cO11mNsgxebPxwMfcsJnu1bNDKrC1ORyQCiXvAaOeK*tmheM0RSVW8P*uKYsn*jy!Eb51!bnwKIuHQDKl3tSF';
+    var refresh_token = process.env.CONSUMERGROUPS_REFRESHTOKEN;
 
     var form = {
-        client_id: '561d3096-12ee-4ee6-b2fe-1fc37af25dd3',
-        client_secret: 'uqbjZDAY041]@{rncLBS85(',
+        client_id: process.env.CONSUMERGROUPS_CLIENTID,
+        client_secret: process.env.CONSUMERGROUPS_SECRET,
         scope: 'https://outlook.office.com/mail.send https://outlook.office.com/mail.read https://outlook.office.com/group.readwrite.all',
         refresh_token: refresh_token,
         grant_type: 'refresh_token',
@@ -126,7 +126,7 @@ function issue_request(method, url, headers, body, callback)
         {
             if (error)
             {
-                console.log(error);
+                console.log("Error: ", method, url, error);
             }
             else
             {
