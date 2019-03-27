@@ -137,6 +137,10 @@ function issue_request(method, url, headers, body, callback)
                     var result = JSON.parse(body);
                     callback(result);
                 }
+                else
+                {
+                    callback(null);
+                }
             }
         });
 }
