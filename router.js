@@ -4,7 +4,17 @@ const consumerGroupController = require('./controllers/consumerGroup')
 const databaseController = require('./controllers/database');
 
 module.exports = app => {
-    // ------------------------------ Router Setup ------------------------------
+    // ------------------------------ Router Setup for root------------------------------
+    var path = require('path'); 
+    const rootRouter = app.route('/')
+    rootRouter.use(require('express').static('public'));
+   
+    // Add a new route
+    rootRouter.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname+'/static/setup.html'));
+    })
+
+    // ------------------------------ Router Setup for Groups------------------------------
     const router = app.route('/groups');
     router.use(require('express').static('public'));
 
