@@ -15,7 +15,8 @@ module.exports = app => {
     // Add a new route
     rootRouter.get('/', (req, res) => {
         res.render('../../../views/setup.hbs', {
-            root_url : process.env.APP_ROOT_URL
+            root_url : process.env.APP_ROOT_URL,
+            client_id: process.env.GITHUB_CLIENTID
         });
     })
 
