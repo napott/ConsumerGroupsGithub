@@ -2,6 +2,8 @@ const bodyParser = require('body-parser');
 
 const consumerGroupController = require('./controllers/consumerGroup')
 const databaseController = require('./controllers/database');
+const querystring = require('querystring');
+const githubController = require('./controllers/github');
 
 module.exports = app => {
     // ------------------------------ Router Setup for root------------------------------
@@ -13,6 +15,80 @@ module.exports = app => {
     rootRouter.get('/', (req, res) => {
         res.sendFile(path.join(__dirname+'/static/setup.html'));
     })
+
+    rootRouter.get('/configureRepos', (req, res) => {
+        var code = req.query.code;
+
+        if (code)
+        {
+            var url = 'https://github.com/login/oauth/access_token';
+    
+            var form = {
+                client_id: process.env.GITHUB_CLIENTID,
+                client_secret: process.env.GITHUB_CLIENTSECRET,
+                code: code,
+                state : "12345"
+            };
+            
+            var formData = querystring.stringify(form);
+            var contentLength = formData.length;
+            var headers =
+            {
+                'Content-Length': contentLength,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept' : 'application/json'
+            };
+            
+            var result = githubController.issue_request(
+                "POST",
+                url,
+                headers,
+                formData, 
+                function (error, response, body)
+                {
+                    console.log("The body: ", body);
+                    result = JSON.parse(body);
+                    res.redirect(301, 'http://localhost:3000/selectRepos?access_token=' + result.access_token);
+                });
+        }
+        else
+        {
+            res.status(404).json();
+        }
+    });
+
+    rootRouter.get('/selectRepos', (req, res) => {
+        var access_token = req.query.access_token;
+
+        if (access_token)
+        {
+            console.log("Access token:", access_token);
+
+            var headers =
+            {
+                'Accept' : 'application/json',
+                'Authorization' : 'bearer ' + access_token,
+                'User-Agent': process.env.GITHUB_USERAGENT
+            };
+            githubController.issue_request(
+                "GET",
+                "https://api.github.com/user/repos",
+                headers,
+                null,
+                function (error, response, body)
+                {
+                    console.log(body);
+
+                    result = JSON.parse(body);
+
+                    res.status(200).json();
+                });
+        }
+        else
+        {
+            res.status(404).json();
+        }
+    });
 
     // ------------------------------ Router Setup for Groups------------------------------
     const router = app.route('/groups');
