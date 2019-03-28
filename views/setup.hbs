@@ -1,11 +1,38 @@
-<html>
-    <head> 
-        <title>{{#if title }}{{ title }}{{else}}No title{{/if}}</title>
-        <link rel="stylesheet" href="style.css">               
-    </head>
-    <body>
-        <ol>
-            <li>Start <a href="https://github.com/login/oauth/authorize?client_id={{ client_id }}&redirect_uri={{ root_url }}/configure&state=12345">here</a></li>
-        </ol>        
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+<title>GitHub Groups</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+    html, body, h1, h2, h3, h4, h5 {
+        font-family: "Raleway", sans-serif
+    }
+</style>
+<body class="w3-light-grey">
+        <!-- Top container -->
+        <div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
+            <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
+            <span class="w3-bar-item w3-right">GitHub Groups</span>
+        </div>
+
+
+        <!-- !PAGE CONTENT! -->
+        <div class="w3-main" style="margin-left:20px;margin-top:43px;">
+            <div class="w3-panel">
+                <div class="w3-row-padding" style="margin:0 -16px">
+                    <div class="w3-third">
+                        <h5></h5>
+                        <img src="../static/ghgicon.png" style="width:100%" alt="GitHub Groups">
+                    </div>
+                    <div class="w3-third">
+                        <h5>Consumer Groups + GitHub</h5>
+                        <p>GitHub works better when connected to a consumer group, we'll walk you trough the process of linking them together!</p>
+                        <li  class="w3-button w3-dark-grey"><a href="https://github.com/login/oauth/authorize?client_id={{ client_id }}&redirect_uri={{ root_url }}/configure&state=12345">Start here</a></li>
+                    </div>
+                </div>
+            </div>
+</body>
 </html>
