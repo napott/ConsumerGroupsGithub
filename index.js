@@ -6,6 +6,7 @@ module.exports = app => {
   require('dotenv').config();
 
   const mongoose = require('mongoose');
+  const request = require('request');
 
   const GithubEvent = require('./schemas/githubEvent');
   const Group = require('./schemas/groupSchema');
@@ -28,6 +29,34 @@ module.exports = app => {
 
   // ------------------------------ Github event handlers ------------------------------
 
+  app.on('installation.created', async context => {
+    let url = 'https://api.github.com/repositories/'
+    let headers = {
+        'User-Agent': 'consumer-groups-github',
+        'Content-Type': 'application/json'
+    }; 
+    // Get the repositories installed on and add the consumer groups bot as an admin
+    context.payload.repositories.forEach(function(repo) {
+      request({
+        method: 'GET',
+        headers: headers,
+        uri: url + repo.id,
+      }, function(error, response, body) {
+        let repoDetails = JSON.parse(body);
+        let owner = repoDetails.owner.login;
+        let repoName = repoDetails.name;
+        let gitHubBotName = "outlookconsumergroupsfhl";
+        context.github.repos.addCollaborator({
+          owner: owner,
+          repo: repoName,
+          username: gitHubBotName,
+          permission: 'admin',
+        });
+        app.log('Added github bot as admin to repo ' + repoName);
+      });
+    });
+  });
+
   /**
    * Handle newly opened issues
    */
@@ -39,6 +68,7 @@ module.exports = app => {
       repo: context.payload.repository.id,
       title: context.payload.issue.title,
       body: context.payload.issue.body,
+      sender: context.payload.sender.login,
       githubId: context.payload.issue.id,
     });
 
@@ -56,6 +86,7 @@ module.exports = app => {
       url: context.payload.issue.html_url,
       title: context.payload.issue.title,
       body: context.payload.issue.body,
+      sender: context.payload.sender.login,
     }
     GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, issue) {
       if (err) {
@@ -77,6 +108,7 @@ module.exports = app => {
       repo: context.payload.repository.id,
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
+      sender: context.payload.sender.login,
       githubId: context.payload.pull_request.id,
     });
 
@@ -94,6 +126,7 @@ module.exports = app => {
       url: context.payload.pull_request.html_url,
       title: context.payload.pull_request.title,
       body: context.payload.pull_request.body,
+      sender: context.payload.sender.login,
     }
     GithubEvent.findOneAndUpdate(query, update, {upsert: true}, function(err, pull) {
       if (err) {
@@ -112,6 +145,7 @@ module.exports = app => {
       eventType: 'push',
       repo: context.payload.repository.id,
       url: context.payload.compare,
+      sender: context.payload.sender.login,
     });
 
     githubEvent.save();
@@ -137,7 +171,7 @@ module.exports = app => {
         app.log("User email isn't configured or is private");
         return;
       }
-      
+
       Group.find({repos: repo}, function(err, groups) {
         if (err) {
           app.log("ERROR: " + err);
