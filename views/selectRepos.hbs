@@ -1,0 +1,19 @@
+<html lang="en" class="height-full">
+  <head>
+    <title>{{#if title }}{{ title }}{{else}}No title{{/if}}</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <form action="{{ actionUrl }}" method="POST">
+      <table>
+        {{#each repositories }}
+          <tr>
+            <td><input type="checkbox" name="repository" value="{{this.id}}" ></td>
+            <td><a href="{{this.html_url}}">{{this.name}}</a></td>
+          </tr>
+        {{/each}}
+      </table>
+      <input type="submit" value="Send">
+    </form>
+  </body>
+</html>

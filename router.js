@@ -4,6 +4,7 @@ const consumerGroupController = require('./controllers/consumerGroup')
 const databaseController = require('./controllers/database');
 const querystring = require('querystring');
 const githubController = require('./controllers/github');
+const jwt = require('njwt');
 
 module.exports = app => {
     // ------------------------------ Router Setup for root------------------------------
@@ -13,10 +14,12 @@ module.exports = app => {
    
     // Add a new route
     rootRouter.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname+'/static/setup.html'));
+        res.render('../../../views/setup.hbs', {
+            root_url : process.env.APP_ROOT_URL
+        });
     })
 
-    rootRouter.get('/configureRepos', (req, res) => {
+    rootRouter.get('/configure', (req, res) => {
         var code = req.query.code;
 
         if (code)
@@ -48,7 +51,49 @@ module.exports = app => {
                 {
                     console.log("The body: ", body);
                     result = JSON.parse(body);
-                    res.redirect(301, 'http://localhost:3000/selectRepos?access_token=' + result.access_token);
+                    res.redirect(301, process.env.APP_ROOT_URL + '/processAccessToken?access_token=' + result.access_token);
+                });
+        }
+        else
+        {
+            res.status(404).json();
+        }
+    });
+
+    rootRouter.get('/processAccessToken', (req, res) => {
+        var access_token = req.query.access_token;
+
+        if (access_token)
+        {
+            console.log("Access token:", access_token);
+            var headers =
+            {
+                'Accept' : 'application/vnd.github.machine-man-preview+json',
+                'Authorization' : 'bearer ' + access_token,
+                'User-Agent': process.env.GITHUB_USERAGENT
+            };
+            githubController.issue_request(
+                "GET",
+                "https://api.github.com/user/installations",
+                headers,
+                null,
+                function (error, response, body)
+                {
+                    console.log("error: ", error);
+                    console.log("installations: ", body);
+
+                    result = JSON.parse(body);
+
+                    if (result.total_count == 0)
+                    {
+                        // Take to installation page
+                        res.redirect(301, process.env.APP_INSTALLATION_URL + '?access_token=' + access_token);
+                    }
+                    else
+                    {
+                        // Take to repository configuration page
+                        res.redirect(301, process.env.APP_ROOT_URL + '/selectRepos?access_token=' + access_token);
+                    }
                 });
         }
         else
@@ -77,11 +122,11 @@ module.exports = app => {
                 null,
                 function (error, response, body)
                 {
-                    console.log(body);
-
                     result = JSON.parse(body);
-
-                    res.status(200).json();
+                    res.render('../../../views/selectRepos.hbs', {
+                        actionUrl : '/processRepos',
+                        repositories : result
+                    });
                 });
         }
         else
@@ -89,6 +134,13 @@ module.exports = app => {
             res.status(404).json();
         }
     });
+
+    rootRouter.post('/processRepos', (req, res) => {
+
+        console.log(req);
+
+        res.status(200).json();
+    });    
 
     // ------------------------------ Router Setup for Groups------------------------------
     const router = app.route('/groups');
