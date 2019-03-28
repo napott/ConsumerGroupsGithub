@@ -21,6 +21,8 @@ module.exports = app => {
 
     rootRouter.get('/configure', (req, res) => {
         var code = req.query.code;
+        var installation_id=req.query.installation_id;
+        var setup_action=req.query.setup_action;
 
         if (code)
         {
@@ -53,6 +55,10 @@ module.exports = app => {
                     result = JSON.parse(body);
                     res.redirect(301, process.env.APP_ROOT_URL + '/processAccessToken?access_token=' + result.access_token);
                 });
+        }
+        else if (installation_id)
+        {
+            res.redirect(301, "https://github.com/login/oauth/authorize?client_id="+ process.env.GITHUB_CLIENTID +"&redirect_uri="+process.env.APP_ROOT_URL+"/configure&state=12345");
         }
         else
         {
@@ -87,7 +93,7 @@ module.exports = app => {
                     if (result.total_count == 0)
                     {
                         // Take to installation page
-                        res.redirect(301, process.env.APP_INSTALLATION_URL + '?access_token=' + access_token);
+                        res.redirect(301, process.env.APP_INSTALLATION_URL);
                     }
                     else
                     {
