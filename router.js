@@ -23,25 +23,17 @@ module.exports = app => {
     rootRouter.get('/start', (req, res) => {
 
         var groupSmtpAddress = req.query.groupSmtpAddress;
-
-        console.log("start/: ", groupSmtpAddress);
-        res.status(404).json();
         if (groupSmtpAddress)
         {
-            console.log("start2/: ", groupSmtpAddress);
             var keys = [ process.env.COOKIE_KEYS ];
             var cookies = new Cookies(req, res, { keys: keys })
 
-            console.log("start3/: ", groupSmtpAddress);
             console.log("groupSmtpAddress: ", groupSmtpAddress);
             cookies.set('groupSmtpAddress', groupSmtpAddress, { signed: true });
-
-            console.log("start4/: ", groupSmtpAddress);
             res.redirect(301, "https://github.com/login/oauth/authorize?client_id="+ process.env.GITHUB_CLIENTID +"&redirect_uri="+process.env.APP_ROOT_URL+"/configure&state=12345");
         }
         else
         {
-            console.log("start5/: ", groupSmtpAddress);
             res.status(404).json(); 
         }
 
@@ -187,7 +179,8 @@ module.exports = app => {
             var keys = [ process.env.COOKIE_KEYS ];
             var cookies = new Cookies(req, res, { keys: keys })            
             var groupSmtpAddress = cookies.get('groupSmtpAddress', {signed: true});
-            cookies.set('groupSmtpAddress', null, { signed: true });
+            //cookies.set('groupSmtpAddress', null, { signed: true });
+            //res.clearCookie("groupSmtpAddress");
 
             console.log("The group smtp address: ", groupSmtpAddress);
 
