@@ -85,9 +85,6 @@ module.exports = app => {
                 null,
                 function (error, response, body)
                 {
-                    console.log("error: ", error);
-                    console.log("installations: ", body);
-
                     result = JSON.parse(body);
 
                     if (result.total_count == 0)
@@ -143,9 +140,22 @@ module.exports = app => {
 
     rootRouter.post('/processRepos', (req, res) => {
 
-        console.log(req);
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString(); // convert Buffer to string
+        });
+        req.on('end', () => {
 
-        res.status(200).json();
+            var result = querystring.parse(body);
+
+            console.log("l",result.repository.length);
+            for (i = 0; i < result.repository.length; i++)
+            {
+                console.log("repository to process: ", result.repository[i]);
+            }
+
+            res.end('ok');
+        });
     });    
 
     // ------------------------------ Router Setup for Groups------------------------------
