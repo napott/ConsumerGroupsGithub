@@ -4,7 +4,7 @@ const consumerGroupController = require('./controllers/consumerGroup')
 const databaseController = require('./controllers/database');
 const querystring = require('querystring');
 const githubController = require('./controllers/github');
-const jwt = require('njwt');
+var Cookies = require('cookies');
 
 module.exports = app => {
     // ------------------------------ Router Setup for root------------------------------
@@ -19,6 +19,24 @@ module.exports = app => {
             client_id: process.env.GITHUB_CLIENTID
         });
     })
+
+    rootRouter.get('/start', (req, res) => {
+        var groupSmtpAddress = req.query.groupSmtpAddress;
+
+        if (groupSmtpAddress)
+        {
+            var keys = [ process.env.COOKIE_KEYS ];
+            var cookies = new Cookies(req, res, { keys: keys })
+
+            cookies.set('groupSmtpAddress', groupSmtpAddress, { signed: true });
+            res.redirect(301, "https://github.com/login/oauth/authorize?client_id="+ process.env.GITHUB_CLIENTID +"&redirect_uri="+process.env.APP_ROOT_URL+"/configure&state=12345");
+        }
+        else
+        {
+            res.status(404).json(); 
+        }
+
+    });
 
     rootRouter.get('/configure', (req, res) => {
         var code = req.query.code;
@@ -149,13 +167,15 @@ module.exports = app => {
 
             var result = querystring.parse(body);
 
-            console.log("l",result.repository.length);
-            for (i = 0; i < result.repository.length; i++)
-            {
-                console.log("repository to process: ", result.repository[i]);
-            }
+            var keys = [ process.env.COOKIE_KEYS ];
+            var cookies = new Cookies(req, res, { keys: keys })            
+            var groupSmtpAddress = cookies.get('groupSmtpAddress', {signed: true});
 
-            res.end('ok');
+            console.log("The group smtp address: ", groupSmtpAddress);
+
+            databaseController.addReposToGroup(groupSmtpAddress, result.repository, function(status, body) {
+                res.status(status).json(body);
+            });
         });
     });    
 
