@@ -21,13 +21,14 @@ module.exports = app => {
     })
 
     rootRouter.get('/start', (req, res) => {
-        var groupSmtpAddress = req.query.groupSmtpAddress;
 
+        var groupSmtpAddress = req.query.groupSmtpAddress;
         if (groupSmtpAddress)
         {
             var keys = [ process.env.COOKIE_KEYS ];
             var cookies = new Cookies(req, res, { keys: keys })
 
+            console.log("groupSmtpAddress: ", groupSmtpAddress);
             cookies.set('groupSmtpAddress', groupSmtpAddress, { signed: true });
             res.redirect(301, "https://github.com/login/oauth/authorize?client_id="+ process.env.GITHUB_CLIENTID +"&redirect_uri="+process.env.APP_ROOT_URL+"/configure&state=12345");
         }
@@ -137,6 +138,13 @@ module.exports = app => {
                 'Authorization' : 'bearer ' + access_token,
                 'User-Agent': process.env.GITHUB_USERAGENT
             };
+
+            var keys = [ process.env.COOKIE_KEYS ];
+            var cookies = new Cookies(req, res, { keys: keys })            
+            var groupSmtpAddress = cookies.get('groupSmtpAddress', {signed: true});
+
+            console.log("GroupSmtpAddress: ", groupSmtpAddress)
+
             githubController.issue_request(
                 "GET",
                 "https://api.github.com/user/repos?type=owner",
@@ -147,7 +155,8 @@ module.exports = app => {
                     result = JSON.parse(body);
                     res.render('../../../views/selectRepos.hbs', {
                         actionUrl : '/processRepos',
-                        repositories : result
+                        repositories : result,
+                        groupSmtpAddress : 'groupSmtpAddress'
                     });
                 });
         }
@@ -170,12 +179,16 @@ module.exports = app => {
             var keys = [ process.env.COOKIE_KEYS ];
             var cookies = new Cookies(req, res, { keys: keys })            
             var groupSmtpAddress = cookies.get('groupSmtpAddress', {signed: true});
-            cookies.set('groupSmtpAddress', null, { signed: true });
+            //cookies.set('groupSmtpAddress', null, { signed: true });
+            //res.clearCookie("groupSmtpAddress");
 
             console.log("The group smtp address: ", groupSmtpAddress);
 
             databaseController.addReposToGroup(groupSmtpAddress, result.repository, function(status, body) {
-                res.status(status).json(body);
+                res.render('../../../views/reposConfigured', {
+                    groupSmtpAddress : groupSmtpAddress,
+                    result : body.message
+                });
             });
         });
     });    
