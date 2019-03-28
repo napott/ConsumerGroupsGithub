@@ -139,7 +139,7 @@ module.exports = app => {
             };
             githubController.issue_request(
                 "GET",
-                "https://api.github.com/user/repos",
+                "https://api.github.com/user/repos?type=owner",
                 headers,
                 null,
                 function (error, response, body)
