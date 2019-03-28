@@ -170,6 +170,7 @@ module.exports = app => {
             var keys = [ process.env.COOKIE_KEYS ];
             var cookies = new Cookies(req, res, { keys: keys })            
             var groupSmtpAddress = cookies.get('groupSmtpAddress', {signed: true});
+            cookies.set('groupSmtpAddress', null, { signed: true });
 
             console.log("The group smtp address: ", groupSmtpAddress);
 
