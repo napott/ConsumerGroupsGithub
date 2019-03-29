@@ -29,34 +29,6 @@ module.exports = app => {
 
   // ------------------------------ Github event handlers ------------------------------
 
-  app.on('installation.created', async context => {
-    let url = 'https://api.github.com/repositories/'
-    let headers = {
-        'User-Agent': 'consumer-groups-github',
-        'Content-Type': 'application/json'
-    }; 
-    // Get the repositories installed on and add the consumer groups bot as an admin
-    context.payload.repositories.forEach(function(repo) {
-      request({
-        method: 'GET',
-        headers: headers,
-        uri: url + repo.id,
-      }, function(error, response, body) {
-        let repoDetails = JSON.parse(body);
-        let owner = repoDetails.owner.login;
-        let repoName = repoDetails.name;
-        let gitHubBotName = "outlookconsumergroupsfhl";
-        context.github.repos.addCollaborator({
-          owner: owner,
-          repo: repoName,
-          username: gitHubBotName,
-          permission: 'admin',
-        });
-        app.log('Added github bot as admin to repo ' + repoName);
-      });
-    });
-  });
-
   /**
    * Handle newly opened issues
    */
