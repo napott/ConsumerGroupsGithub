@@ -12,7 +12,6 @@
     }
 </style>
 <body class="w3-light-grey">
-    <form  action="{{ actionUrl }}" method="POST">
         <!-- Top container -->
         <div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
             <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
@@ -29,20 +28,11 @@
                         <img src="ghgicon.png" style="width:100%" alt="GitHub Groups">
                     </div>
                     <div class="w3-third">
-                        <h5>Select repositories to associate with group {{ groupSmtpAddress }}</h5>
-                        <table class="w3-table w3-striped w3-white">
-{{#each repositories }}
-                            <tr>
-                                <td><i class="fa fa-laptop w3-text-red w3-large"></i></td>
-                                <td><a href="{{this.html_url}}">{{this.name}}</a></td>
-                                <td><input type="checkbox" name="repository" value="{{this.id}}"></td>
-                            </tr>
-{{/each}}
-                        </table><br />
-                        <input type="submit" value="Register" title="Register" class="w3-button w3-dark-grey"/>
+                        <h5>Consumer Groups + GitHub</h5>
+                        <p>{{ groupSmtpAddress }} : {{ result }}</p>
+                        <p>You can close this window now</p>
                     </div>
                 </div>
             </div>
-    </form>
 </body>
 </html>
